@@ -1,0 +1,114 @@
+
+# split gene or neuron list into vector
+split_text_to_vector <- function(text){
+  stringr::str_split(text,
+                     pattern = "[[:space:],;]")[[1]] |>
+    stringi::stri_remove_empty()
+}
+
+# ensure we have a list of valid neurons
+validate_neurons <- function(neurs, neurons_table){
+  
+  # replace synonyms
+  neurs <- dplyr::recode(neurs,
+                  SENS="SENSORY",
+                  INTER="INTERNEURON",
+                  INTERNEURONS="INTERNEURON",
+                  MOTORNEURON="MOTOR",
+                  MOTORNEURONS="MOTOR",
+                  MOTONEURON="MOTOR",
+                  MOTONEURONS="MOTOR",
+                  PHARYNX="PHARYNGEAL",
+                  PHA="PHARYNGEAL",
+                  CILIA="CILIATED",
+                  CHOLINERGIC="ACH",
+                  ACHERGIC="ACH",
+                  ACETYLCHOLINERGIC="ACH",
+                  ACETYLCHOLINE="ACH",
+                  CHO="ACH",
+                  SEROTONERGIC="SEROTONIN",
+                  SEROTONINERGIC="SEROTONIN",
+                  `5-HT`="SEROTONIN",
+                  `5HT`="SEROTONIN",
+                  GLUTAMATERGIC="GLUTAMATE",
+                  GLU="GLUTAMATE",
+                  GLUERGIC="GLUTAMATE",
+                  GLUTA="GLUTAMATE",
+                  GABAERGIC="GABA",
+                  OCTO="OCTOPAMINE",
+                  OCTOPAMINERGIC="OCTOPAMINE")
+  
+  
+  if(length(neurs) == 1L && stringr::str_to_upper(neurs) == "ALL"){
+    return(neurons_table$neuron_id)
+  }
+  
+  
+  # Subcategories
+  if(any(neurs == "SENSORY")){
+    neurs <- setdiff(neurs, "SENSORY") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$modality,
+                                                      "sensory")])
+  }
+  if(any(neurs == "INTERNEURON")){
+    neurs <- setdiff(neurs, "INTERNEURON") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$modality,
+                                                      "interneuron")])
+  }
+  if(any(neurs == "MOTOR")){
+    neurs <- setdiff(neurs, "MOTOR") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$modality,
+                                                      "motor")])
+  }
+  if(any(neurs == "PHARYNGEAL")){
+    neurs <- setdiff(neurs, "PHARYNGEAL") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$modality,
+                                                      "pharyngeal")])
+  }
+  if(any(neurs == "CILIATED")){
+    neurs <- setdiff(neurs, "CILIATED") |>
+      c(neurons_table$neuron_id[neurons_table$ciliated == "yes"])
+  }
+  if(any(neurs == "ACH")){
+    neurs <- setdiff(neurs, "ACH") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$neurotransmitter,
+                                                      "ach")])
+  }
+  if(any(neurs == "SEROTONIN")){
+    neurs <- setdiff(neurs, "SEROTONIN") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$neurotransmitter,
+                                                      "serotonin")])
+  }
+  if(any(neurs == "GLUTAMATE")){
+    neurs <- setdiff(neurs, "GLUTAMATE") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$neurotransmitter,
+                                                      "glutamate")])
+  }
+  if(any(neurs == "GABA")){
+    neurs <- setdiff(neurs, "GABA") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$neurotransmitter,
+                                                      "gaba")])
+  }
+  if(any(neurs == "OCTOPAMINE")){
+    neurs <- setdiff(neurs, "OCTOPAMINE") |>
+      c(neurons_table$neuron_id[stringr::str_detect(neurons_table$neurotransmitter,
+                                                      "octopamine")])
+  }
+  
+  neur_by_type <- (! neurs %in% neurons_table$neuron_id) & (neurs %in% neurons_table$neuron_type)
+  if(any(neur_by_type)){
+    neurs <- setdiff(neurs, neurs[neur_by_type]) |>
+      c(neurons_table$neuron_id[neurons_table$neuron_type %in% neurs[neur_by_type]])
+  }
+  
+  
+  
+  # Remove unknown neurons
+  unknown_neurs <- setdiff(neurs, neurons_table$neuron_id)
+  
+  if(length(unknown_neurs) != 0L){
+    warning("Neuron name not recognized: ", unknown_neurs)
+  }
+  
+  setdiff(neurs, unknown_neurs)
+}
