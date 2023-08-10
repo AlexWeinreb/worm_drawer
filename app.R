@@ -27,7 +27,11 @@ neur_coords_tail <- readxl::read_excel("data/Table S2 - Positional variability a
 
 
 neurons_table <- readr::read_csv("data/neuron_properties.csv",
-                                 col_types = "cccc")
+                                 col_types = "cccc",
+                                 na = "N/A") |>
+  dplyr::mutate(modality = stringr::str_to_lower(modality),
+                ciliated = stringr::str_to_lower(ciliated),
+                neurotransmitter = stringr::str_to_lower(neurotransmitter))
 readr::stop_for_problems(neurons_table)
 
 source("utils.R")
