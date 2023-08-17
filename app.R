@@ -65,7 +65,9 @@ ui <- fluidPage(
             )
           )
         )
-    )
+    ),
+    tags$footer("See source and details ",
+                       tags$a("here.", href = "https://github.com/AlexWeinreb/worm_drawer"))
 )
 
 
